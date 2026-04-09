@@ -82,18 +82,16 @@ class DianomiStream(RESTStream):
     def _cols(self) -> list[dict]:
         """Fetch column definitions from the API for this stream's stat_id.
 
-        Makes a single request with today's date to retrieve the column
-        metadata, even if no rows are returned.
+        Omits date parameters so the API returns column metadata only,
+        without requiring a valid date range.
 
         Returns:
             A list of column definition dicts with ``label`` and ``type`` keys.
         """
-        today = datetime.now(tz=timezone.utc).strftime(_DATE_FORMAT)
-        params = {**self._base_params(), "date1": today, "date2": today}
         response = self.requests_session.get(
             f"{self.url_base}{self.path}",
             headers=self.http_headers,
-            params=params,
+            params=self._base_params(),
         )
         response.raise_for_status()
         try:
