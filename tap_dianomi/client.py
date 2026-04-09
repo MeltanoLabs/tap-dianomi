@@ -45,8 +45,8 @@ class DianomiStream(RESTStream):
     def http_headers(self) -> dict:
         """Return the HTTP headers required for Dianomi authentication."""
         return {
-            "X-Auth-Key": self.config.get("api_key", ""),
-            "X-Auth-Email": self.config.get("email", ""),
+            "X-Auth-Key": self.config["api_key"],
+            "X-Auth-Email": self.config["email"],
         }
 
     @override
