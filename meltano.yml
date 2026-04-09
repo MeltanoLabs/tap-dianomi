@@ -19,7 +19,7 @@ plugins:
 
     settings:
     - name: api_key
-      kind: password
+      sensitive: true
       label: API Key
       description: API key provided by your Dianomi account manager
 
