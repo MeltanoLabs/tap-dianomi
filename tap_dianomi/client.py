@@ -6,7 +6,7 @@ import contextlib
 import sys
 from datetime import datetime, timezone
 from functools import cached_property
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from singer_sdk import typing as th
 from singer_sdk.exceptions import FatalAPIError
@@ -47,13 +47,19 @@ class DianomiStream(RESTStream):
     def get_new_paginator(self):
         return None
 
-    def _base_params(self) -> dict[str, Any]:
-        """Return common query parameters shared by schema and data requests."""
-        params: dict[str, Any] = {"stat_id": self.stat_id, "format": "json"}
+    @cached_property
+    def _base_params(self):
+        params = {
+            "format": "json",
+            "stat_id": self.stat_id,
+        }
+
         if client_id := self.config.get("client_id"):
             params["client_id"] = client_id
+
         if partner_id := self.config.get("partner_id"):
             params["partner_id"] = partner_id
+
         return params
 
     @override
@@ -62,7 +68,7 @@ class DianomiStream(RESTStream):
         response = self.requests_session.get(
             self.url_base + self.path,
             headers=self.http_headers,
-            params=self._base_params(),
+            params=self._base_params,
         )
 
         self.validate_response(response)
@@ -88,7 +94,7 @@ class DianomiStream(RESTStream):
         end_dt = datetime.now(tz=timezone.utc)
 
         return {
-            **self._base_params(),
+            **self._base_params,
             "date1": start_dt.strftime(_DATE_FORMAT),
             "date2": end_dt.strftime(_DATE_FORMAT),
         }
