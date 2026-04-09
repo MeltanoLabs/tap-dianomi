@@ -67,12 +67,11 @@ class TapDianomi(Tap):
             A list of all available Dianomi reporting streams.
         """
         return [
-            streams.DataBySmartadByDayStream(self),
-            streams.PerformanceByCountryStream(self),
-            streams.PartnerRevenueOverTimeStream(self),
-            streams.RevenueByDeviceStream(self),
-            streams.RevenueByProductTypeStream(self),
-            streams.SmartadPerformanceStream(self),
+            streams.ActionsByAdVariantStream(self),
+            streams.ActionsByPublisherStream(self),
+            streams.AggregateCampaignPerformanceByDayStream(self),
+            streams.PerformanceByAdVariantByDayStream(self),
+            streams.PerformanceByCampaignWithActionsStream(self),
         ]
 
 
