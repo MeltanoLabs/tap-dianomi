@@ -9,6 +9,7 @@ from functools import cached_property
 from typing import Any, ClassVar
 
 from singer_sdk import typing as th
+from singer_sdk.exceptions import FatalAPIError
 from singer_sdk.streams import RESTStream
 
 if sys.version_info >= (3, 12):
@@ -87,11 +88,9 @@ class DianomiStream(RESTStream):
             headers=self.http_headers,
             params=self._base_params(),
         )
-        response.raise_for_status()
-        try:
-            return response.json().get("cols", [])
-        except Exception:  # noqa: BLE001
-            return []
+        self.validate_response(response)
+
+        return response.json().get("cols", [])
 
     @override
     @cached_property
@@ -119,11 +118,15 @@ class DianomiStream(RESTStream):
         }
 
     @override
+    def validate_response(self, response):
+        super().validate_response(response)
+
+        if response.text == "failed - no permission to access this stat":
+            raise FatalAPIError(response.text)
+
+    @override
     def parse_response(self, response):
-        try:
-            data = response.json()
-        except Exception:  # noqa: BLE001
-            return
+        data = response.json()
 
         cols = [c["label"] for c in data.get("cols", [])]
         for row in data.get("rows", []):
