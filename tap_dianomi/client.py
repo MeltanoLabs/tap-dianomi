@@ -71,7 +71,12 @@ class DianomiStream(RESTStream):
             params=self._base_params,
         )
 
-        self.validate_response(response)
+        response.raise_for_status()
+
+        if response.text == "failed - no permission to access this stat":
+            self.logger.warning("Cloud not discover schema for '%s', %s", self.name, response.text)
+            return {}
+
         cols = response.json()["cols"]
 
         return th.PropertiesList(
