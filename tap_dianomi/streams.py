@@ -2,7 +2,36 @@
 
 from __future__ import annotations
 
+import sys
+from functools import cached_property
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
+
+from singer_sdk import typing as th
+
 from tap_dianomi.client import DianomiStream
+
+
+class _ByDayDianomiStream(DianomiStream):
+    replication_key = "date"
+    is_timestamp_replication_key = True
+    is_sorted = True
+
+    @override
+    @cached_property
+    def schema(self):
+        schema = super().schema
+        schema["properties"][self.replication_key] = th.DateType().to_dict()
+
+        return schema
+
+    @override
+    @cached_property
+    def primary_keys(self):
+        return ("date",)
 
 
 class ActionsByAdVariantStream(DianomiStream):
@@ -21,26 +50,34 @@ class ActionsByPublisherStream(DianomiStream):
     primary_keys = ("Publisher_ID",)
 
 
-class AggregateCampaignPerformanceByDayStream(DianomiStream):
+class AggregateCampaignPerformanceByDayStream(_ByDayDianomiStream):
     """Aggregate campaign performance broken down by day."""
 
     name = "aggregate_campaign_performance_by_day"
     stat_id = 2583
-    primary_keys = ("date", "campaign_name")
-    replication_key = "date"
-    is_timestamp_replication_key = True
-    is_sorted = True
+
+    @override
+    @cached_property
+    def primary_keys(self):
+        return (
+            *super().primary_keys,
+            "campaign_name",
+        )
 
 
-class PerformanceByAdVariantByDayStream(DianomiStream):
+class PerformanceByAdVariantByDayStream(_ByDayDianomiStream):
     """Expanded performance metrics per ad variant broken down by day."""
 
     name = "performance_by_ad_variant_by_day"
     stat_id = 2377
-    primary_keys = ("date", "variant_id")
-    replication_key = "date"
-    is_timestamp_replication_key = True
-    is_sorted = True
+
+    @override
+    @cached_property
+    def primary_keys(self):
+        return (
+            *super().primary_keys,
+            "variant_id",
+        )
 
 
 class PerformanceByCampaignWithActionsStream(DianomiStream):
