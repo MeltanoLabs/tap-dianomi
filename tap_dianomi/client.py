@@ -2,17 +2,11 @@
 
 from __future__ import annotations
 
-import decimal
 import sys
+from datetime import date, datetime, timezone
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from singer_sdk import SchemaDirectory, StreamSchema
-from singer_sdk.authenticators import APIKeyAuthenticator
-from singer_sdk.helpers.jsonpath import extract_jsonpath
-from singer_sdk.pagination import BaseAPIPaginator  # noqa: TC002
 from singer_sdk.streams import RESTStream
-
-from tap_dianomi import schemas
 
 if sys.version_info >= (3, 12):
     from typing import override
@@ -26,70 +20,47 @@ if TYPE_CHECKING:
     from singer_sdk.helpers.types import Context
 
 
-# TODO: Delete this is if not using json files for schema definition
-SCHEMAS_DIR = SchemaDirectory(schemas)
-
-
 class DianomiStream(RESTStream):
     """Dianomi stream class."""
 
-    # Update this value if necessary or override `parse_response`.
-    records_jsonpath = "$[*]"
+    url_base = "https://my.dianomi.com"
+    path = "/cgi-bin/selfserve/stat.pl"
 
-    # Update this value if necessary or override `get_new_paginator`.
-    next_page_token_jsonpath = "$.next_page"  # noqa: S105
+    stat_id: ClassVar[int]
 
-    schema: ClassVar[StreamSchema] = StreamSchema(SCHEMAS_DIR)
-
-    @override
-    @property
-    def url_base(self) -> str:
-        """Return the API URL root, configurable via tap settings."""
-        # TODO: hardcode a value here, or retrieve it from self.config
-        return "https://api.mysample.com"
-
-    @override
-    @property
-    def authenticator(self) -> APIKeyAuthenticator:
-        """Return a new authenticator object.
-
-        Returns:
-            An authenticator instance.
-        """
-        return APIKeyAuthenticator(
-            key="x-api-key",
-            value=self.config["auth_token"],
-            location="header",
-        )
+    _DATE_FORMAT = "%Y%m%d"
 
     @property
     @override
     def http_headers(self) -> dict:
-        """Return the http headers needed.
-
-        Returns:
-            A dictionary of HTTP headers.
-        """
-        # If not using an authenticator, you may also provide inline auth headers:
-        # headers["Private-Token"] = self.config.get("auth_token")
-        return {}
+        """Return the HTTP headers needed for Dianomi authentication."""
+        return {
+            "X-Auth-Key": self.config.get("api_key", ""),
+            "X-Auth-Email": self.config.get("email", ""),
+        }
 
     @override
-    def get_new_paginator(self) -> BaseAPIPaginator | None:
-        """Create a new pagination helper instance.
+    def get_new_paginator(self) -> None:
+        """Return None - Dianomi reporting endpoints do not paginate."""
+        return None
 
-        If the source API can make use of the `next_page_token_jsonpath`
-        attribute, or it contains a `X-Next-Page` header in the response
-        then you can remove this method.
+    def _to_api_date(self, value: date | datetime | str) -> str:
+        """Convert a date value to the yyyymmdd format expected by the Dianomi API.
 
-        If you need custom pagination that uses page numbers, "next" links, or
-        other approaches, please read the guide: https://sdk.meltano.com/en/v0.25.0/guides/pagination-classes.html.
+        Args:
+            value: A date, datetime, or ISO-format date string.
 
         Returns:
-            A pagination helper instance, or ``None`` to indicate pagination
-            is not supported.
+            Date string in yyyymmdd format.
         """
-        return super().get_new_paginator()
+        if isinstance(value, str):
+            if len(value) == 8 and value.isdigit():
+                return value
+            # Strip time component if present (e.g. "2024-01-01T00:00:00+00:00")
+            value = datetime.fromisoformat(value.split("T")[0])
+        if isinstance(value, datetime):
+            return value.strftime(self._DATE_FORMAT)
+        return value.strftime(self._DATE_FORMAT)
 
     @override
     def get_url_params(
@@ -97,58 +68,59 @@ class DianomiStream(RESTStream):
         context: Context | None,
         next_page_token: Any | None,
     ) -> dict[str, Any]:
-        """Return a dictionary of values to be used in URL parameterization.
+        """Return URL parameters for the Dianomi stats endpoint.
+
+        Builds a date range from the last synced date (or configured start_date)
+        to today, and appends the stat_id and optional filtering parameters.
 
         Args:
             context: The stream context.
-            next_page_token: The next page index or value.
+            next_page_token: Unused - Dianomi does not paginate.
 
         Returns:
             A dictionary of URL query parameters.
         """
-        params: dict = {}
-        if next_page_token:
-            params["page"] = next_page_token
-        if self.replication_key:
-            params["sort"] = "asc"
-            params["order_by"] = self.replication_key
+        start_value = self.get_starting_replication_key_value(context)
+        start_dt: date | datetime | str | None = start_value or self.config.get("start_date")
+        end_dt = datetime.now(tz=timezone.utc)
+
+        params: dict[str, Any] = {
+            "stat_id": self.stat_id,
+            "format": "json",
+            "date1": self._to_api_date(start_dt) if start_dt else self._to_api_date(end_dt),
+            "date2": self._to_api_date(end_dt),
+        }
+
+        if partner_id := self.config.get("partner_id"):
+            params["partner_id"] = partner_id
+
+        if client_id := self.config.get("client_id"):
+            params["client_id"] = client_id
+
         return params
 
     @override
-    def prepare_request_payload(
-        self,
-        context: Context | None,
-        next_page_token: Any | None,
-    ) -> dict | None:
-        """Prepare the data payload for the REST API request.
-
-        By default, no payload will be sent (return None).
-
-        Args:
-            context: The stream context.
-            next_page_token: The next page index or value.
-
-        Returns:
-            A dictionary with the JSON body for a POST requests.
-        """
-        # TODO: Delete this method if no payload is required. (Most REST APIs.)
-        return None
-
-    @override
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
-        """Parse the response and return an iterator of result records.
+        """Parse the API response and yield individual records.
+
+        Handles both a top-level JSON array and a JSON object with a
+        nested data array (under keys "data", "results", "records", or "rows").
 
         Args:
-            response: The HTTP ``requests.Response`` object.
+            response: The HTTP response object.
 
         Yields:
-            Each record from the source.
+            Each record as a dictionary.
         """
-        # TODO: Parse response body and return a set of records.
-        yield from extract_jsonpath(
-            self.records_jsonpath,
-            input=response.json(parse_float=decimal.Decimal),
-        )
+        data = response.json()
+        if isinstance(data, list):
+            yield from data
+            return
+        if isinstance(data, dict):
+            for key in ("data", "results", "records", "rows"):
+                if key in data and isinstance(data[key], list):
+                    yield from data[key]
+                    return
 
     @override
     def post_process(
@@ -156,17 +128,20 @@ class DianomiStream(RESTStream):
         row: dict,
         context: Context | None = None,
     ) -> dict | None:
-        """As needed, append or transform raw data to match expected structure.
-
-        Note: As of SDK v0.47.0, this method is automatically executed for all stream types.
-        You should not need to call this method directly in custom `get_records` implementations.
+        """Normalise yyyymmdd date strings to ISO format (yyyy-mm-dd).
 
         Args:
             row: An individual record from the stream.
             context: The stream context.
 
         Returns:
-            The updated record dictionary, or ``None`` to skip the record.
+            The updated record dictionary.
         """
-        # TODO: Delete this method if not needed.
+        for key in ("date", "start_date", "end_date"):
+            raw = row.get(key)
+            if isinstance(raw, str) and len(raw) == 8 and raw.isdigit():
+                try:
+                    row[key] = datetime.strptime(raw, self._DATE_FORMAT).date().isoformat()
+                except ValueError:
+                    pass
         return row

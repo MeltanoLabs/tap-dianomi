@@ -5,9 +5,8 @@ from __future__ import annotations
 import sys
 
 from singer_sdk import Tap
-from singer_sdk import typing as th  # JSON schema typing helpers
+from singer_sdk import typing as th
 
-# TODO: Import your custom stream types here:
 from tap_dianomi import streams
 
 if sys.version_info >= (3, 12):
@@ -21,34 +20,42 @@ class TapDianomi(Tap):
 
     name = "tap-dianomi"
 
-    # TODO: Update this section with the actual config values you expect:
     config_jsonschema = th.PropertiesList(
         th.Property(
-            "auth_token",
-            th.StringType(nullable=False),
+            "api_key",
+            th.StringType,
             required=True,
-            secret=True,  # Flag config as protected.
-            title="Auth Token",
-            description="The token to authenticate against Dianomi",
+            secret=True,
+            title="API Key",
+            description="API key provided by your Dianomi account manager",
         ),
         th.Property(
-            "project_ids",
-            th.ArrayType(th.StringType(nullable=False), nullable=False),
+            "email",
+            th.StringType,
             required=True,
-            title="Project IDs",
-            description="Project IDs to replicate",
+            title="Email",
+            description="Email address associated with your Dianomi account",
         ),
         th.Property(
             "start_date",
-            th.DateTimeType(nullable=True),
-            description="The earliest record date to sync",
+            th.DateTimeType,
+            title="Start Date",
+            description="The earliest record date to sync (ISO 8601 format)",
         ),
         th.Property(
-            "api_url",
-            th.StringType(nullable=False),
-            title="API URL",
-            default="https://api.mysample.com",
-            description="The url for the API service",
+            "partner_id",
+            th.IntegerType,
+            title="Partner ID",
+            description=(
+                "Publisher Partner ID to filter results. "
+                "Found in the left sidebar of the Dianomi web interface."
+            ),
+        ),
+        th.Property(
+            "client_id",
+            th.IntegerType,
+            title="Client ID",
+            description="Advertiser Client ID to filter results.",
         ),
     ).to_dict()
 
@@ -57,11 +64,15 @@ class TapDianomi(Tap):
         """Return a list of discovered streams.
 
         Returns:
-            A list of discovered streams.
+            A list of all available Dianomi reporting streams.
         """
         return [
-            streams.GroupsStream(self),
-            streams.UsersStream(self),
+            streams.DataBySmartadByDayStream(self),
+            streams.PerformanceByCountryStream(self),
+            streams.PartnerRevenueOverTimeStream(self),
+            streams.RevenueByDeviceStream(self),
+            streams.RevenueByProductTypeStream(self),
+            streams.SmartadPerformanceStream(self),
         ]
 
 
