@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import sys
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from functools import cached_property
 from typing import Any, ClassVar
 
@@ -47,23 +47,6 @@ class DianomiStream(RESTStream):
     def get_new_paginator(self):
         return None
 
-    def _to_api_date(self, value: date | datetime | str) -> str:
-        """Convert a date value to the yyyymmdd format expected by the Dianomi API.
-
-        Args:
-            value: A date, datetime, or ISO-format date string.
-
-        Returns:
-            Date string in yyyymmdd format.
-        """
-        if isinstance(value, str):
-            if len(value) == _DATE_FORMAT_LEN and value.isdigit():
-                return value
-            value = datetime.fromisoformat(value.split("T")[0])
-        if isinstance(value, datetime):
-            return value.strftime(_DATE_FORMAT)
-        return value.strftime(_DATE_FORMAT)
-
     def _base_params(self) -> dict[str, Any]:
         """Return common query parameters shared by schema and data requests."""
         params: dict[str, Any] = {"stat_id": self.stat_id, "format": "json"}
@@ -95,16 +78,19 @@ class DianomiStream(RESTStream):
             ]
         ).to_dict()
 
+    @cached_property
+    def _start_date(self):
+        return datetime.fromisoformat(self.config["start_date"])
+
     @override
     def get_url_params(self, context, next_page_token):
-        start_value = self.get_starting_replication_key_value(context)
-        start_dt: date | datetime | str | None = start_value or self.config.get("start_date")
+        start_dt = self.get_starting_timestamp(context) or self._start_date
         end_dt = datetime.now(tz=timezone.utc)
 
         return {
             **self._base_params(),
-            "date1": self._to_api_date(start_dt) if start_dt else self._to_api_date(end_dt),
-            "date2": self._to_api_date(end_dt),
+            "date1": start_dt.strftime(_DATE_FORMAT),
+            "date2": end_dt.strftime(_DATE_FORMAT),
         }
 
     @override

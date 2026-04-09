@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from datetime import datetime, timedelta, timezone
 
 from singer_sdk import Tap
 from singer_sdk import typing as th
@@ -41,6 +42,7 @@ class TapDianomi(Tap):
             th.DateTimeType,
             title="Start Date",
             description="The earliest record date to sync (ISO 8601 format)",
+            default=(datetime.now(tz=timezone.utc) - timedelta(days=365)).date().isoformat(),
         ),
         th.Property(
             "partner_id",
