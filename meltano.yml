@@ -17,25 +17,33 @@ plugins:
     - stream-maps
     - structured-logging
 
-    # TODO: Declare settings and their types here:
     settings:
-    - name: auth_token
-      label: Auth Token
-      description: The token to authenticate against Dianomi
-      sensitive: true
+    - name: api_key
+      kind: password
+      label: API Key
+      description: API key provided by your Dianomi account manager
+
+    - name: email
+      label: Email
+      description: Email address associated with your Dianomi account
 
     - name: start_date
       kind: date_iso8601
       label: Start Date
-      description: Initial date to start extracting data from
+      description: The earliest record date to sync (ISO 8601 format)
 
-    # TODO: Declare required settings here:
+    - name: partner_id
+      kind: integer
+      label: Partner ID
+      description: Publisher Partner ID to filter results. Found in the left sidebar of the Dianomi web interface.
+
+    - name: client_id
+      kind: integer
+      label: Client ID
+      description: Advertiser Client ID to filter results.
+
     settings_group_validation:
-    - [auth_token]
-
-    # TODO: Declare default configuration values here:
-    config:
-      start_date: 6 months ago
+    - [api_key, email]
 
   loaders:
   - name: target-jsonl
