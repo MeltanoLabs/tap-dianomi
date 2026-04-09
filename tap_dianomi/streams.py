@@ -11,7 +11,6 @@ class ActionsByAdVariantStream(DianomiStream):
     name = "actions_by_ad_variant"
     stat_id = 2485
     primary_keys = ("campaign_id", "variant_id")
-    replication_key = None
 
 
 class ActionsByPublisherStream(DianomiStream):
@@ -20,7 +19,6 @@ class ActionsByPublisherStream(DianomiStream):
     name = "actions_by_publisher"
     stat_id = 2371
     primary_keys = ("Publisher_ID",)
-    replication_key = None
 
 
 class AggregateCampaignPerformanceByDayStream(DianomiStream):
@@ -49,4 +47,3 @@ class PerformanceByCampaignWithActionsStream(DianomiStream):
     name = "performance_by_campaign_with_actions"
     stat_id = 2380
     primary_keys = ("Campaign_Id",)
-    replication_key = None
