@@ -27,24 +27,24 @@ plugins:
       label: Email
       description: Dianomi account email address
 
-    - name: start_date
-      kind: date_iso8601
-      label: Start Date
-      description: The earliest record date to sync (ISO 8601 format) - defaults to the last year
+    - name: client_id
+      kind: integer
+      label: Client ID
+      description: Advertiser Client ID to filter results by - required for advertisers
 
     - name: partner_id
       kind: integer
       label: Partner ID
       description: Publisher partner ID to filter results by - required for publishers
 
-    - name: client_id
-      kind: integer
-      label: Client ID
-      description: Advertiser Client ID to filter results by - required for advertisers
+    - name: start_date
+      kind: date_iso8601
+      label: Start Date
+      description: The earliest record date to sync (ISO 8601 format) - defaults to the last year
 
     settings_group_validation:
-    - [api_key, email, partner_id]
     - [api_key, email, client_id]
+    - [api_key, email, partner_id]
 
   loaders:
   - name: target-jsonl

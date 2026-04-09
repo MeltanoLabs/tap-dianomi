@@ -38,13 +38,10 @@ class TapDianomi(Tap):
             description="Dianomi account email address",
         ),
         th.Property(
-            "start_date",
-            th.DateTimeType,
-            title="Start Date",
-            description=(
-                "The earliest record date to sync (ISO 8601 format) - defaults to the last year"
-            ),
-            default=(datetime.now(tz=timezone.utc) - timedelta(days=365)).date().isoformat(),
+            "client_id",
+            th.IntegerType,
+            title="Client ID",
+            description="Advertiser Client ID to filter results by - required for advertisers",
         ),
         th.Property(
             "partner_id",
@@ -53,10 +50,13 @@ class TapDianomi(Tap):
             description="Publisher partner ID to filter results by - required for publishers",
         ),
         th.Property(
-            "client_id",
-            th.IntegerType,
-            title="Client ID",
-            description="Advertiser Client ID to filter results by - required for advertisers",
+            "start_date",
+            th.DateTimeType,
+            title="Start Date",
+            description=(
+                "The earliest record date to sync (ISO 8601 format) - defaults to the last year"
+            ),
+            default=(datetime.now(tz=timezone.utc) - timedelta(days=365)).date().isoformat(),
         ),
     ).to_dict()
 
