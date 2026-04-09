@@ -73,35 +73,25 @@ class DianomiStream(RESTStream):
             params["partner_id"] = partner_id
         return params
 
+    @override
     @cached_property
-    def _cols(self) -> list[dict]:
-        """Fetch column definitions from the API for this stream's stat_id.
-
-        Omits date parameters so the API returns column metadata only,
-        without requiring a valid date range.
-
-        Returns:
-            A list of column definition dicts with ``label`` and ``type`` keys.
-        """
+    def schema(self):
         response = self.requests_session.get(
             f"{self.url_base}{self.path}",
             headers=self.http_headers,
             params=self._base_params(),
         )
+
         self.validate_response(response)
+        cols = response.json()["cols"]
 
-        return response.json()["cols"]
-
-    @override
-    @cached_property
-    def schema(self):
         return th.PropertiesList(
             *[
                 th.Property(
                     col["label"],
                     _DIANOMI_TYPE_MAP.get(col["type"], th.StringType),
                 )
-                for col in self._cols
+                for col in cols
             ]
         ).to_dict()
 
