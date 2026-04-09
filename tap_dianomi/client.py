@@ -77,7 +77,7 @@ class DianomiStream(RESTStream):
     @cached_property
     def schema(self):
         response = self.requests_session.get(
-            f"{self.url_base}{self.path}",
+            self.url_base + self.path,
             headers=self.http_headers,
             params=self._base_params(),
         )
