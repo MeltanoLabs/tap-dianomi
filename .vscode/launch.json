@@ -13,7 +13,7 @@
             "justMyCode": false,
             "args": [
                 "--config",
-                ".secrets/config.json",
+                "config.json",
             ],
         },
     ]
