@@ -28,6 +28,7 @@ class AggregateCampaignPerformanceByDayStream(DianomiStream):
     stat_id = 2583
     primary_keys = ("date", "campaign_name")
     replication_key = "date"
+    is_timestamp_replication_key = True
     is_sorted = True
 
 
@@ -38,6 +39,7 @@ class PerformanceByAdVariantByDayStream(DianomiStream):
     stat_id = 2377
     primary_keys = ("date", "variant_id")
     replication_key = "date"
+    is_timestamp_replication_key = True
     is_sorted = True
 
 
