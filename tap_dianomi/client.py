@@ -35,8 +35,8 @@ class DianomiStream(RESTStream):
 
     stat_id: ClassVar[int]
 
-    @property
     @override
+    @property
     def http_headers(self):
         return {
             "X-Auth-Key": self.config["api_key"],
