@@ -61,12 +61,7 @@ class TapDianomi(Tap):
     ).to_dict()
 
     @override
-    def discover_streams(self) -> list[streams.DianomiStream]:
-        """Return a list of discovered streams.
-
-        Returns:
-            A list of all available Dianomi reporting streams.
-        """
+    def discover_streams(self):
         return [
             streams.ActionsByAdVariantStream(self),
             streams.ActionsByPublisherStream(self),
