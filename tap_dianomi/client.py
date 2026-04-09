@@ -6,7 +6,7 @@ import contextlib
 import sys
 from datetime import date, datetime, timezone
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any, ClassVar
 
 from singer_sdk import typing as th
 from singer_sdk.streams import RESTStream
@@ -15,12 +15,6 @@ if sys.version_info >= (3, 12):
     from typing import override
 else:
     from typing_extensions import override
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
-
-    import requests
-    from singer_sdk.helpers.types import Context
 
 
 _DIANOMI_TYPE_MAP: dict[str, type[th.JSONTypeHelper]] = {
@@ -42,16 +36,15 @@ class DianomiStream(RESTStream):
 
     @property
     @override
-    def http_headers(self) -> dict:
-        """Return the HTTP headers required for Dianomi authentication."""
+    def http_headers(self):
         return {
             "X-Auth-Key": self.config["api_key"],
             "X-Auth-Email": self.config["email"],
         }
 
     @override
-    def get_new_paginator(self) -> None:
-        """Dianomi reporting endpoints do not paginate."""
+    def get_new_paginator(self):
+        return None
 
     def _to_api_date(self, value: date | datetime | str) -> str:
         """Convert a date value to the yyyymmdd format expected by the Dianomi API.
@@ -102,13 +95,7 @@ class DianomiStream(RESTStream):
 
     @override
     @cached_property
-    def schema(self) -> dict:
-        """Dynamically build the stream schema from the API's column definitions.
-
-        Returns:
-            A JSON Schema dict derived from the ``cols`` metadata returned by
-            the Dianomi stats endpoint.
-        """
+    def schema(self):
         return th.PropertiesList(
             *[
                 th.Property(
@@ -120,23 +107,7 @@ class DianomiStream(RESTStream):
         ).to_dict()
 
     @override
-    def get_url_params(
-        self,
-        context: Context | None,
-        next_page_token: Any | None,
-    ) -> dict[str, Any]:
-        """Return URL parameters for the Dianomi stats endpoint.
-
-        Builds a date range from the last synced date (or configured
-        start_date) to today, merged with common stat and filter params.
-
-        Args:
-            context: The stream context.
-            next_page_token: Unused - Dianomi does not paginate.
-
-        Returns:
-            A dictionary of URL query parameters.
-        """
+    def get_url_params(self, context, next_page_token):
         start_value = self.get_starting_replication_key_value(context)
         start_dt: date | datetime | str | None = start_value or self.config.get("start_date")
         end_dt = datetime.now(tz=timezone.utc)
@@ -148,18 +119,7 @@ class DianomiStream(RESTStream):
         }
 
     @override
-    def parse_response(self, response: requests.Response) -> Iterable[dict]:
-        """Parse the API's cols/rows response and yield individual records.
-
-        Handles both object rows (dicts) and array rows (lists), zipping
-        array rows with the column labels returned alongside.
-
-        Args:
-            response: The HTTP response object.
-
-        Yields:
-            Each record as a dictionary keyed by column label.
-        """
+    def parse_response(self, response):
         try:
             data = response.json()
         except Exception:  # noqa: BLE001
@@ -173,20 +133,7 @@ class DianomiStream(RESTStream):
                 yield row
 
     @override
-    def post_process(
-        self,
-        row: dict,
-        context: Context | None = None,
-    ) -> dict | None:
-        """Normalise any yyyymmdd date strings in the record to ISO format.
-
-        Args:
-            row: An individual record from the stream.
-            context: The stream context.
-
-        Returns:
-            The updated record dictionary.
-        """
+    def post_process(self, row, context=None):
         for key, raw in row.items():
             if isinstance(raw, str) and len(raw) == _DATE_FORMAT_LEN and raw.isdigit():
                 with contextlib.suppress(ValueError):
