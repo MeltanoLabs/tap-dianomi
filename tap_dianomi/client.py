@@ -90,7 +90,7 @@ class DianomiStream(RESTStream):
         )
         self.validate_response(response)
 
-        return response.json().get("cols", [])
+        return response.json()["cols"]
 
     @override
     @cached_property
