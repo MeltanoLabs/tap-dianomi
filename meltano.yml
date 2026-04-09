@@ -21,29 +21,30 @@ plugins:
     - name: api_key
       sensitive: true
       label: API Key
-      description: API key provided by your Dianomi account manager
+      description: Dianomi API key
 
     - name: email
       label: Email
-      description: Email address associated with your Dianomi account
+      description: Dianomi account email address
 
     - name: start_date
       kind: date_iso8601
       label: Start Date
-      description: The earliest record date to sync (ISO 8601 format)
+      description: The earliest record date to sync (ISO 8601 format) - defaults to the last year
 
     - name: partner_id
       kind: integer
       label: Partner ID
-      description: Publisher Partner ID to filter results. Found in the left sidebar of the Dianomi web interface.
+      description: Publisher partner ID to filter results by - required for publishers
 
     - name: client_id
       kind: integer
       label: Client ID
-      description: Advertiser Client ID to filter results.
+      description: Advertiser Client ID to filter results by - required for advertisers
 
     settings_group_validation:
-    - [api_key, email]
+    - [api_key, email, partner_id]
+    - [api_key, email, client_id]
 
   loaders:
   - name: target-jsonl

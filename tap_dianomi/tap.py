@@ -28,36 +28,35 @@ class TapDianomi(Tap):
             required=True,
             secret=True,
             title="API Key",
-            description="API key provided by your Dianomi account manager",
+            description="Dianomi API key",
         ),
         th.Property(
             "email",
             th.StringType,
             required=True,
             title="Email",
-            description="Email address associated with your Dianomi account",
+            description="Dianomi account email address",
         ),
         th.Property(
             "start_date",
             th.DateTimeType,
             title="Start Date",
-            description="The earliest record date to sync (ISO 8601 format)",
+            description=(
+                "The earliest record date to sync (ISO 8601 format) - defaults to the last year"
+            ),
             default=(datetime.now(tz=timezone.utc) - timedelta(days=365)).date().isoformat(),
         ),
         th.Property(
             "partner_id",
             th.IntegerType,
             title="Partner ID",
-            description=(
-                "Publisher Partner ID to filter results. "
-                "Found in the left sidebar of the Dianomi web interface."
-            ),
+            description="Publisher partner ID to filter results by - required for publishers",
         ),
         th.Property(
             "client_id",
             th.IntegerType,
             title="Client ID",
-            description="Advertiser Client ID to filter results.",
+            description="Advertiser Client ID to filter results by - required for advertisers",
         ),
     ).to_dict()
 
