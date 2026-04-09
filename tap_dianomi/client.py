@@ -128,12 +128,12 @@ class DianomiStream(RESTStream):
     def parse_response(self, response):
         data = response.json()
 
-        cols = [c["label"] for c in data.get("cols", [])]
-        for row in data.get("rows", []):
-            if isinstance(row, list):
-                yield dict(zip(cols, row, strict=False))
-            elif isinstance(row, dict):
-                yield row
+        cols = [c["label"] for c in data["cols"]]
+        rows = (r["c"] for r in data["rows"])
+
+        for row in rows:
+            record = {c: r["v"] for c, r in zip(cols, row, strict=True)}
+            yield record
 
     @override
     def post_process(self, row, context=None):
