@@ -95,7 +95,6 @@ line-length = 100
 required-version = ">=0.15"
 
 [tool.ruff.lint]
-future-annotations = true
 ignore = [
     "COM812",  # missing-trailing-comma
 ]

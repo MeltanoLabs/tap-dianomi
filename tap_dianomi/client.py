@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import sys
 from datetime import date, datetime, timezone
 from functools import cached_property
@@ -28,6 +29,7 @@ _DIANOMI_TYPE_MAP: dict[str, type[th.JSONTypeHelper]] = {
 }
 
 _DATE_FORMAT = "%Y%m%d"
+_DATE_FORMAT_LEN = 8
 
 
 class DianomiStream(RESTStream):
@@ -49,8 +51,7 @@ class DianomiStream(RESTStream):
 
     @override
     def get_new_paginator(self) -> None:
-        """Return None - Dianomi reporting endpoints do not paginate."""
-        return None
+        """Dianomi reporting endpoints do not paginate."""
 
     def _to_api_date(self, value: date | datetime | str) -> str:
         """Convert a date value to the yyyymmdd format expected by the Dianomi API.
@@ -62,7 +63,7 @@ class DianomiStream(RESTStream):
             Date string in yyyymmdd format.
         """
         if isinstance(value, str):
-            if len(value) == 8 and value.isdigit():
+            if len(value) == _DATE_FORMAT_LEN and value.isdigit():
                 return value
             value = datetime.fromisoformat(value.split("T")[0])
         if isinstance(value, datetime):
@@ -167,7 +168,7 @@ class DianomiStream(RESTStream):
         cols = [c["label"] for c in data.get("cols", [])]
         for row in data.get("rows", []):
             if isinstance(row, list):
-                yield dict(zip(cols, row))
+                yield dict(zip(cols, row, strict=False))
             elif isinstance(row, dict):
                 yield row
 
@@ -187,9 +188,7 @@ class DianomiStream(RESTStream):
             The updated record dictionary.
         """
         for key, raw in row.items():
-            if isinstance(raw, str) and len(raw) == 8 and raw.isdigit():
-                try:
-                    row[key] = datetime.strptime(raw, _DATE_FORMAT).date().isoformat()
-                except ValueError:
-                    pass
+            if isinstance(raw, str) and len(raw) == _DATE_FORMAT_LEN and raw.isdigit():
+                with contextlib.suppress(ValueError):
+                    row[key] = datetime.strptime(raw, _DATE_FORMAT).date().isoformat()  # noqa: DTZ007
         return row
