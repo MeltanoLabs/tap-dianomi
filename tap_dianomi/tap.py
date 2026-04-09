@@ -20,6 +20,7 @@ class TapDianomi(Tap):
     """Singer tap for Dianomi."""
 
     name = "tap-dianomi"
+    dynamic_catalog = True
 
     config_jsonschema = th.PropertiesList(
         th.Property(
