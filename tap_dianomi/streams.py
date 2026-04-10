@@ -50,6 +50,37 @@ class ActionsByPublisherStream(DianomiStream):
     primary_keys = ("Publisher_ID",)
 
 
+class ActionsByPublisherByDayStream(_ByDayDianomiStream):
+    """Actions aggregated by publisher, broken down by day."""
+
+    name = "actions_by_publisher_by_day"
+    stat_id = 2595
+
+    @override
+    @cached_property
+    def primary_keys(self):
+        return (
+            *super().primary_keys,
+            "Publisher_ID",
+        )
+
+
+class ActionsByPublisherPerCampaignByDayStream(_ByDayDianomiStream):
+    """Actions aggregated by publisher and campaign, broken down by day."""
+
+    name = "actions_by_publisher_per_campaign_by_day"
+    stat_id = 2596
+
+    @override
+    @cached_property
+    def primary_keys(self):
+        return (
+            *super().primary_keys,
+            "campaign_id",
+            "Publisher_ID",
+        )
+
+
 class AggregateCampaignPerformanceByDayStream(_ByDayDianomiStream):
     """Aggregate campaign performance broken down by day."""
 

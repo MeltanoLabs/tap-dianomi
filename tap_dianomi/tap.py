@@ -66,6 +66,8 @@ class TapDianomi(Tap):
         return [
             streams.ActionsByAdVariantStream(self),
             streams.ActionsByPublisherStream(self),
+            streams.ActionsByPublisherByDayStream(self),
+            streams.ActionsByPublisherPerCampaignByDayStream(self),
             streams.AggregateCampaignPerformanceByDayStream(self),
             streams.PerformanceByAdVariantByDayStream(self),
             streams.PerformanceByCampaignWithActionsStream(self),
