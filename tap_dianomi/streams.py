@@ -38,7 +38,7 @@ class ActionsByAdVariantStream(DianomiStream):
     """Actions by ad variant with estimated viewed impressions."""
 
     name = "actions_by_ad_variant"
-    stat_id = 2485
+    stat_id = 2465
     primary_keys = ("campaign_id", "variant_id")
 
 
