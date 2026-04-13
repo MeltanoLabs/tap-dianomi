@@ -13,6 +13,7 @@ else:
 from singer_sdk import typing as th
 
 from tap_dianomi.client import DianomiStream
+from tap_dianomi.pagination import DateRangePaginator
 
 
 class _ByDayDianomiStream(DianomiStream):
@@ -32,6 +33,22 @@ class _ByDayDianomiStream(DianomiStream):
     @cached_property
     def primary_keys(self):
         return ("date",)
+
+    @override
+    def get_new_paginator(self):
+        start_date = self.get_starting_timestamp(self.context).date()
+        return DateRangePaginator(start_date, days=7)
+
+    @override
+    def get_url_params(self, context, next_page_token):
+        params = super().get_url_params(context, next_page_token)
+
+        start, end = next_page_token
+
+        return params | {
+            "date1": _ByDayDianomiStream.to_api_date(start),
+            "date2": _ByDayDianomiStream.to_api_date(end),
+        }
 
 
 class ActionsByAdVariantStream(DianomiStream):

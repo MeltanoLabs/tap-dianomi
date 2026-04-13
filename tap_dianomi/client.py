@@ -35,6 +35,11 @@ class DianomiStream(RESTStream):
 
     stat_id: ClassVar[int]
 
+    @staticmethod
+    def to_api_date(dt: datetime) -> str:
+        """Format datetime as required by the Dianomi API."""
+        return dt.strftime(_DATE_FORMAT)
+
     @override
     @property
     def http_headers(self):
@@ -100,8 +105,8 @@ class DianomiStream(RESTStream):
 
         return {
             **self._base_params,
-            "date1": start_dt.strftime(_DATE_FORMAT),
-            "date2": end_dt.strftime(_DATE_FORMAT),
+            "date1": DianomiStream.to_api_date(start_dt),
+            "date2": DianomiStream.to_api_date(end_dt),
         }
 
     @override
