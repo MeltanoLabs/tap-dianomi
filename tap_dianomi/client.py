@@ -103,8 +103,7 @@ class DianomiStream(RESTStream):
         start_dt = self.get_starting_timestamp(context) or self._start_date
         end_dt = datetime.now(tz=timezone.utc)
 
-        return {
-            **self._base_params,
+        return self._base_params | {
             "date1": DianomiStream.to_api_date(start_dt),
             "date2": DianomiStream.to_api_date(end_dt),
         }
