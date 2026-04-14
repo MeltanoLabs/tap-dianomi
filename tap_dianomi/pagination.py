@@ -27,4 +27,3 @@ class DateRangePaginator(BaseAPIPaginator[tuple[date, date]]):
     @override
     def continue_if_empty(self, response):
         return True
-
