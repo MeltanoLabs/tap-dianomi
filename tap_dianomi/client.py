@@ -57,6 +57,7 @@ class DianomiStream(RESTStream):
         params = {
             "format": "json",
             "stat_id": self.stat_id,
+            "download": 1,  # get images as URLs
         }
 
         if client_id := self.config.get("client_id"):
