@@ -6,7 +6,6 @@ import contextlib
 import sys
 from datetime import datetime, timezone
 from functools import cached_property
-from typing import ClassVar
 
 from singer_sdk import typing as th
 from singer_sdk.exceptions import FatalAPIError
@@ -33,7 +32,10 @@ class DianomiStream(RESTStream):
     url_base = "https://my.dianomi.com"
     path = "/cgi-bin/selfserve/stat.pl"
 
-    stat_id: ClassVar[int]
+    @override
+    def __init__(self, *args, stat_id: int, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.stat_id = stat_id
 
     @staticmethod
     def to_api_date(dt: datetime) -> str:
