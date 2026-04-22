@@ -69,15 +69,13 @@ class TapDianomi(Tap):
 
     @override
     def discover_streams(self):
-        headers = {
-            "X-Auth-Key": self.config["api_key"],
-            "X-Auth-Email": self.config["email"],
-            "X-Auth-Client-Id": (client_id := self.config.get("client_id")) and str(client_id),
-        }
-
         response = requests.get(
             "https://my.dianomi.com/cgi-bin/genienav.pl",
-            headers=headers,
+            headers={
+                "X-Auth-Key": self.config["api_key"],
+                "X-Auth-Email": self.config["email"],
+                "X-Auth-Client-Id": (client_id := self.config.get("client_id")) and str(client_id),
+            },
             timeout=300,
         )
         response.raise_for_status()
