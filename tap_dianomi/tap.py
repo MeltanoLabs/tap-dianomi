@@ -5,10 +5,16 @@ from __future__ import annotations
 import sys
 from datetime import datetime, timedelta, timezone
 
+import requests
 from singer_sdk import Tap
 from singer_sdk import typing as th
 
-from tap_dianomi import streams
+from tap_dianomi.client import DianomiStream
+from tap_dianomi.streams import (
+    STREAM_PRIMARY_KEYS,
+    STREAM_REPLICATION_KEYS,
+    ByDayDianomiStream,
+)
 
 if sys.version_info >= (3, 12):
     from typing import override
@@ -63,15 +69,42 @@ class TapDianomi(Tap):
 
     @override
     def discover_streams(self):
-        return [
-            streams.ActionsByAdVariantStream(self),
-            streams.ActionsByPublisherStream(self),
-            streams.ActionsByPublisherByDayStream(self),
-            streams.ActionsByPublisherPerCampaignByDayStream(self),
-            streams.AggregateCampaignPerformanceByDayStream(self),
-            streams.PerformanceByAdVariantByDayStream(self),
-            streams.PerformanceByCampaignWithActionsStream(self),
-        ]
+        response = requests.get(
+            "https://my.dianomi.com/cgi-bin/genienav.pl",
+            headers={
+                "X-Auth-Key": self.config["api_key"],
+                "X-Auth-Email": self.config["email"],
+                "X-Auth-Client-Id": (client_id := self.config.get("client_id")) and str(client_id),
+            },
+            timeout=300,
+        )
+        response.raise_for_status()
+
+        available_stats: dict[str, dict] = response.json()
+
+        for stream_name, stat in available_stats.items():
+            stream_cls = DianomiStream
+
+            if stream_name not in STREAM_REPLICATION_KEYS:
+                self.logger.warning(
+                    "No replication key defined for %s",
+                    stream_name,
+                )
+
+            if STREAM_REPLICATION_KEYS.get(stream_name) == "date":
+                stream_cls = ByDayDianomiStream
+
+            stream = stream_cls(self, name=stream_name, stat_id=stat["stat_id"])
+
+            if stream_name not in STREAM_PRIMARY_KEYS:
+                self.logger.warning(
+                    "No replication key defined for %s",
+                    stream_name,
+                )
+
+            stream.primary_keys = STREAM_PRIMARY_KEYS.get(stream_name, ())
+
+            yield stream
 
 
 if __name__ == "__main__":

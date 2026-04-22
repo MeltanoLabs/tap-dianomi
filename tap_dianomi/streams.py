@@ -15,8 +15,34 @@ from singer_sdk import typing as th
 from tap_dianomi.client import DianomiStream
 from tap_dianomi.pagination import DateRangePaginator
 
+STREAM_PRIMARY_KEYS = {
+    "ad_performance_variant_viewable_tz_2": ("campaign_id", "variant_id"),
+    "activity_pub_impressions_tz": ("Publisher_ID",),
+    "product_performance_variant_actions_tz": ("Campaign_Id",),
+    "activity_pub_impressions_tz_by_day": ("date", "Publisher_ID"),
+    "activity_pub_impressions_tz_per_campaign_by_day": ("date", "campaign_id", "Publisher_ID"),
+    "activity_pub_impressions_tz_per_campaign_by_day_em": ("date", "campaign_id", "Publisher_ID"),
+    "performance_campaign_day_tz": ("date", "campaign_name"),
+    "ad_performance_variant_day_ex_tz": ("date", "variant_id"),
+    "ad_performance_variant_day_ex_tz_em": ("date", "variant_id"),
+}
 
-class _ByDayDianomiStream(DianomiStream):
+STREAM_REPLICATION_KEYS = {
+    "ad_performance_variant_viewable_tz_2": None,
+    "activity_pub_impressions_tz": None,
+    "product_performance_variant_actions_tz": None,
+    "activity_pub_impressions_tz_by_day": "date",
+    "activity_pub_impressions_tz_per_campaign_by_day": "date",
+    "activity_pub_impressions_tz_per_campaign_by_day_em": "date",
+    "performance_campaign_day_tz": "date",
+    "ad_performance_variant_day_ex_tz": "date",
+    "ad_performance_variant_day_ex_tz_em": "date",
+}
+
+
+class ByDayDianomiStream(DianomiStream):
+    """Base for day-level streams with date-range pagination."""
+
     replication_key = "date"
     is_timestamp_replication_key = True
     is_sorted = True
@@ -26,13 +52,7 @@ class _ByDayDianomiStream(DianomiStream):
     def schema(self):
         schema = super().schema
         schema["properties"][self.replication_key] = th.DateType().to_dict()
-
         return schema
-
-    @override
-    @cached_property
-    def primary_keys(self):
-        return ("date",)
 
     @override
     def get_new_paginator(self):
@@ -42,95 +62,8 @@ class _ByDayDianomiStream(DianomiStream):
     @override
     def get_url_params(self, context, next_page_token):
         params = super().get_url_params(context, next_page_token)
-
         start, end = next_page_token
-
         return params | {
-            "date1": _ByDayDianomiStream.to_api_date(start),
-            "date2": _ByDayDianomiStream.to_api_date(end),
+            "date1": ByDayDianomiStream.to_api_date(start),
+            "date2": ByDayDianomiStream.to_api_date(end),
         }
-
-
-class ActionsByAdVariantStream(DianomiStream):
-    """Actions by ad variant with estimated viewed impressions."""
-
-    name = "actions_by_ad_variant"
-    stat_id = 2465
-    primary_keys = ("campaign_id", "variant_id")
-
-
-class ActionsByPublisherStream(DianomiStream):
-    """Actions aggregated by publisher."""
-
-    name = "actions_by_publisher"
-    stat_id = 2371
-    primary_keys = ("Publisher_ID",)
-
-
-class ActionsByPublisherByDayStream(_ByDayDianomiStream):
-    """Actions aggregated by publisher, broken down by day."""
-
-    name = "actions_by_publisher_by_day"
-    stat_id = 2595
-
-    @override
-    @cached_property
-    def primary_keys(self):
-        return (
-            *super().primary_keys,
-            "Publisher_ID",
-        )
-
-
-class ActionsByPublisherPerCampaignByDayStream(_ByDayDianomiStream):
-    """Actions aggregated by publisher and campaign, broken down by day."""
-
-    name = "actions_by_publisher_per_campaign_by_day"
-    stat_id = 2596
-
-    @override
-    @cached_property
-    def primary_keys(self):
-        return (
-            *super().primary_keys,
-            "campaign_id",
-            "Publisher_ID",
-        )
-
-
-class AggregateCampaignPerformanceByDayStream(_ByDayDianomiStream):
-    """Aggregate campaign performance broken down by day."""
-
-    name = "aggregate_campaign_performance_by_day"
-    stat_id = 2583
-
-    @override
-    @cached_property
-    def primary_keys(self):
-        return (
-            *super().primary_keys,
-            "campaign_name",
-        )
-
-
-class PerformanceByAdVariantByDayStream(_ByDayDianomiStream):
-    """Expanded performance metrics per ad variant broken down by day."""
-
-    name = "performance_by_ad_variant_by_day"
-    stat_id = 2377
-
-    @override
-    @cached_property
-    def primary_keys(self):
-        return (
-            *super().primary_keys,
-            "variant_id",
-        )
-
-
-class PerformanceByCampaignWithActionsStream(DianomiStream):
-    """Campaign-level performance including action metrics."""
-
-    name = "performance_by_campaign_with_actions"
-    stat_id = 2380
-    primary_keys = ("Campaign_Id",)

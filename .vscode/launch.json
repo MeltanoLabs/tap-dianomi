@@ -16,5 +16,18 @@
                 "config.json",
             ],
         },
+        {
+            "name": "tap-dianomi (discover)",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "program": "tap_dianomi",
+            "justMyCode": false,
+            "args": [
+                "--config",
+                "config.json",
+                "--discover",
+            ],
+        },
     ]
 }
