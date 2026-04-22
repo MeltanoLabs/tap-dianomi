@@ -72,10 +72,8 @@ class TapDianomi(Tap):
         headers = {
             "X-Auth-Key": self.config["api_key"],
             "X-Auth-Email": self.config["email"],
+            "X-Auth-Client-Id": (client_id := self.config.get("client_id")) and str(client_id),
         }
-
-        if client_id := self.config.get("client_id"):
-            headers["X-Auth-Client-Id"] = str(client_id)
 
         response = requests.get(
             "https://my.dianomi.com/cgi-bin/genienav.pl",
