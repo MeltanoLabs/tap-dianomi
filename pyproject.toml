@@ -47,12 +47,12 @@ dev = [
     { include-group = "test" },
 ]
 test = [
-    "pytest>=9",
+    "pytest>=9.1.0",
     "singer-sdk[testing]",
 ]
 typing = [
     "mypy>=2.1.0",
-    "ty>=0.0.48",
+    "ty>=0.0.50",
     "types-requests",
 ]
 
