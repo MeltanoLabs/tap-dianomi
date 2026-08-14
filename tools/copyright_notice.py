@@ -1,4 +1,7 @@
-"""Ensure each Python module docstring ends with a Meltano copyright notice."""
+"""Ensure each Python module docstring ends with a Meltano copyright notice.
+
+Copyright (c) 2026 Meltano.
+"""
 
 from __future__ import annotations
 
