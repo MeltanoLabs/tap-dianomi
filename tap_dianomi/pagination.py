@@ -1,7 +1,4 @@
-"""Pagination classes for tap-dianomi.
-
-Copyright (c) 2026 Meltano.
-"""
+"""Pagination classes for tap-dianomi."""
 
 from __future__ import annotations
 
