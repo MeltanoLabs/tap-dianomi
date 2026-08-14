@@ -1,4 +1,7 @@
-"""Dianomi tap class."""
+"""Dianomi tap class.
+
+Copyright (c) 2026 Meltano.
+"""
 
 from __future__ import annotations
 
