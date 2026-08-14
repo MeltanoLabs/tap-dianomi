@@ -1,7 +1,6 @@
-"""Dianomi entry point.
+# Copyright (c) 2026 Meltano.
 
-Copyright (c) 2026 Meltano.
-"""
+"""Dianomi entry point."""
 
 from __future__ import annotations
 

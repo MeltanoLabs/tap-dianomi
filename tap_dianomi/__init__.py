@@ -1,4 +1,3 @@
-"""Tap for Dianomi.
+# Copyright (c) 2026 Meltano.
 
-Copyright (c) 2026 Meltano.
-"""
+"""Tap for Dianomi."""
