@@ -30,6 +30,14 @@ repos:
   - id: check-github-workflows
   - id: check-meltano
 
+- repo: local
+  hooks:
+  - id: copyright-notice
+    name: Add module docstring copyright notice
+    entry: python tools/copyright_notice.py
+    language: python
+    types: [python]
+
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.16.1
   hooks:
